@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using BetterGenshinImpact.GameTask.Common.Element.Assets;
 using BetterGenshinImpact.GameTask.Common.Map.Maps;
 using BetterGenshinImpact.GameTask.Common.Map.Maps.Base;
@@ -14,6 +15,44 @@ public class NavigationInstance
     private float _prevX = -1;
     private float _prevY = -1;
     private DateTime _captureTime = DateTime.MinValue;
+
+    /// <summary>
+    /// 诊断用：已保存的小地图截图数量，最多保存 20 张，避免占满磁盘
+    /// </summary>
+    private int _debugDumpCount;
+
+    /// <summary>
+    /// 诊断用：上一次保存小地图截图的时间，约每 2 秒保存一张
+    /// </summary>
+    private DateTime _debugDumpTime = DateTime.MinValue;
+
+    /// <summary>
+    /// 诊断用：把实际裁剪到的小地图保存到 log\minimap_debug，用于排查低分辨率下识别坐标错误的问题
+    /// </summary>
+    private void DumpMiniMapForDebug(Mat colorMat, Point2f position)
+    {
+        try
+        {
+            var now = DateTime.UtcNow;
+            if (_debugDumpCount >= 20 || (now - _debugDumpTime).TotalSeconds < 2)
+            {
+                return;
+            }
+
+            _debugDumpTime = now;
+            _debugDumpCount++;
+            var dir = Path.Combine(AppContext.BaseDirectory, "log", "minimap_debug");
+            Directory.CreateDirectory(dir);
+            // 文件名带上裁剪尺寸与识别到的坐标，便于对照日志
+            var name = $"{DateTime.Now:HHmmss}_{colorMat.Width}x{colorMat.Height}_pos{position.X:F0}_{position.Y:F0}.png";
+            Cv2.ImWrite(Path.Combine(dir, name), colorMat);
+        }
+        catch
+        {
+            // 诊断功能失败不影响正常识别
+        }
+    }
+
     public void Reset()
     {
         (_prevX, _prevY) = (-1, -1);
@@ -29,6 +68,7 @@ public class NavigationInstance
         using var colorMat = new Mat(imageRegion.SrcMat, MapAssets.Get(imageRegion).MimiMapRect);
         var captureTime = DateTime.UtcNow;
         var p = MapManager.GetMap(mapName, mapMatchMethod).GetMiniMapPosition(colorMat, _prevX, _prevY);
+        DumpMiniMapForDebug(colorMat, p);
         if (p != default && captureTime > _captureTime)
         {
             (_prevX, _prevY) = (p.X, p.Y);
