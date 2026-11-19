@@ -428,7 +428,7 @@ public partial class PathExecutor
     private void LogScreenResolution()
     {
         var gameScreenSize = SystemControl.GetGameScreenRect(_runtime.Window.Handle);
-        if (gameScreenSize.Width * 9 != gameScreenSize.Height * 16)
+        if (!BetterGenshinImpact.Helpers.AspectRatioHelper.Is16By9(gameScreenSize.Width, gameScreenSize.Height))
         {
             Logger.LogError("游戏窗口分辨率不是 16:9 ！当前分辨率为 {Width}x{Height} , 非 16:9 分辨率的游戏无法正常使用地图追踪功能！",
                 gameScreenSize.Width, gameScreenSize.Height);
@@ -437,9 +437,9 @@ public partial class PathExecutor
 
         if (gameScreenSize.Width < 1920 || gameScreenSize.Height < 1080)
         {
-            Logger.LogError("游戏窗口分辨率小于 1920x1080 ！当前分辨率为 {Width}x{Height} , 小于 1920x1080 的分辨率的游戏地图追踪的效果非常差！",
+            // 小分辨率（如 1366x768）下小地图已按比例适配，只提示不再中断
+            Logger.LogWarning("游戏窗口分辨率小于 1920x1080 ！当前分辨率为 {Width}x{Height} , 地图追踪在小分辨率下效果可能变差",
                 gameScreenSize.Width, gameScreenSize.Height);
-            throw new Exception("游戏窗口分辨率小于 1920x1080 ！无法使用地图追踪功能！");
         }
     }
 

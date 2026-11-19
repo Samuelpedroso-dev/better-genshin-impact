@@ -1168,7 +1168,7 @@ public class AutoBossTask : ISoloTask<AutoBossParam, ResinClaimData>
     private void LogScreenResolution()
     {
         var gameScreenSize = SystemControl.GetGameScreenRect(_runtime.Window.Handle);
-        if (gameScreenSize.Width * 9 != gameScreenSize.Height * 16)
+        if (!BetterGenshinImpact.Helpers.AspectRatioHelper.Is16By9(gameScreenSize.Width, gameScreenSize.Height))
         {
             _logger.LogError("游戏窗口分辨率不是 16:9 ！当前分辨率为 {Width}x{Height}", gameScreenSize.Width, gameScreenSize.Height);
             throw new Exception("游戏窗口分辨率不是 16:9");

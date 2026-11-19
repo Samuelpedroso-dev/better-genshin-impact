@@ -116,7 +116,7 @@ public class GlobalMethod
     public void SetGameMetrics(int width, int height, double dpi = 1)
     {
         // 必须16:9 的分辨率
-        if (width * 9 != height * 16)
+        if (!BetterGenshinImpact.Helpers.AspectRatioHelper.Is16By9(width, height))
         {
             throw new ArgumentException("游戏分辨率必须是16:9的分辨率");
         }
