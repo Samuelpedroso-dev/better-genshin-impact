@@ -50,9 +50,26 @@ public class MaskCalculator : IDisposable
         _circleMask.Circle(Size / 2, Size / 2, Size / 2, new Scalar(255), -1);
     }
 
+    /// <summary>
+    /// 1080P 下小地图截图的边长（见 MapAssets.MimiMapRect1080P），后续的掩膜和地图匹配都以这个尺寸为基准
+    /// </summary>
+    private const int MiniMapSize1080P = 212;
+
     public (Mat, Mat) Process1(Mat bgrMat)
     {
+        // 游戏分辨率低于 1080P 时，小地图截图会按比例变小（如 1366x768 下约 151 像素），
+        // 而下面的裁剪和后续匹配都按 1080P 的 212 像素设计，所以先放大回 1080P 的尺寸
+        Mat? resized = null;
+        if (bgrMat.Width != MiniMapSize1080P || bgrMat.Height != MiniMapSize1080P)
+        {
+            resized = new Mat();
+            Cv2.Resize(bgrMat, resized, new Size(MiniMapSize1080P, MiniMapSize1080P), 0, 0, InterpolationFlags.Cubic);
+            bgrMat = resized;
+        }
+
         bgrMat = bgrMat[new Rect((bgrMat.Width - Size) / 2, (bgrMat.Width - Size) / 2, Size, Size)];
+        // 裁剪得到的 Mat 与放大图共享像素数据，这里只释放放大图的头部，数据由裁剪结果继续持有
+        resized?.Dispose();
         bgrMat.ConvertTo(_outMatF, MatType.CV_32FC3);
         CreateIconMask(bgrMat);
         return (bgrMat, _outMask);
